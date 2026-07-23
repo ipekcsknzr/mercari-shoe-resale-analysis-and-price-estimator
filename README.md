@@ -173,16 +173,3 @@ These results should be interpreted cautiously because the dataset does not iden
 ## Tools Used
 
 Python, pandas, matplotlib, Jupyter Notebook, VS Code, Git, GitHub, and Parquet.
-
-## Future Improvements
-
-- Use item-name text to separate shoe models
-- Compare more condition groups when sample sizes allow
-- Study full price distributions
-- Measure uncertainty around median estimates
-- Build an interactive dashboard
-- Analyze listing descriptions with NLP
-
-## Author
-
-Developed as a data analytics project exploring condition-based pricing patterns in the online resale market.
