@@ -169,6 +169,14 @@ Calculates listing counts, median prices, condition-retention percentages, and e
 
 Creates the final slope charts and retention-percentage charts for all seven shoe categories.
 
+### `06_bootstrap_confidence_intervals.ipynb` 
+
+Estimates 95% confidence intervals using bootstrap resampling
+
+### `07_shoe_price_estimator.ipynb` 
+
+Builds, compares, tunes, and evaluates machine-learning price prediction models
+
 ## Findings
 
 Approximately **92.6%** of the analyzed brand and shoe-type combinations showed an expected decline pattern, while **7.4%** showed a non-monotonic pattern.
