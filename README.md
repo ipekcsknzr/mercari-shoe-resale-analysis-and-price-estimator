@@ -1,4 +1,4 @@
-# Mercari Women’s Shoe Condition & Price Resilience Analysis
+# Mercari Women’s Shoe Resale Analysis & Price Estimator
 
 ## Project Overview
 
