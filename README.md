@@ -2,15 +2,31 @@
 
 ## Project Overview
 
-This project analyzes how women’s shoe listing prices on Mercari change as item condition worsens.
+This project analyzes women’s shoe listings from the Mercari Price Suggestion Challenge dataset to understand how listing prices change across brands, shoe types, and item conditions.
 
-Rather than ranking brands against one another, the analysis examines each brand within a specific shoe type and compares its own median listing prices across condition groups.
+The project has two main parts:
 
-The main question is:
+1. **Condition-retention analysis**  
+   Measures how each brand’s own median listing price changes as shoe condition worsens within the same shoe type.
 
-> How does a brand’s median listing price change from Condition 1 to lower-condition listings within the same shoe category?
+2. **Machine-learning price estimator**  
+   Predicts an expected Mercari listing price using brand, shoe type, item condition, listing title, item description, and engineered text features.
 
-The project currently focuses primarily on the change from **Condition 1 to Condition 3**, because these groups contain enough listings to support more reliable comparisons.
+The analysis focuses on seven women’s shoe categories and uses more than 53,000 cleaned listings.
+
+The current best prediction model is a character-enhanced, balanced weighted Ridge Regression model with:
+
+- **Mean Absolute Error:** $12.15
+- **Root Mean Squared Error:** $24.28
+- **R²:** 0.640
+
+The estimator performs best for typical listings under $50, while rare and premium listings remain more difficult to predict.
+
+The long-term goal is to build a Kelley Blue Book–style website where users can enter shoe details and receive:
+
+- An estimated Mercari listing price
+- An adaptive price range
+- A confidence or reliability indicator
 
 ## Dataset
 
@@ -153,22 +169,109 @@ Calculates listing counts, median prices, condition-retention percentages, and e
 
 Creates the final slope charts and retention-percentage charts for all seven shoe categories.
 
-## Current Findings
+## Findings
 
 Approximately **92.6%** of the analyzed brand and shoe-type combinations showed an expected decline pattern, while **7.4%** showed a non-monotonic pattern.
 
 These results should be interpreted cautiously because the dataset does not identify identical shoe models across condition groups.
 
+## Price Estimation Model
+
+In addition to the condition-retention analysis, this project now includes a machine-learning model that estimates the expected Mercari listing price of a women’s shoe.
+
+The estimator uses the following inputs:
+
+- Brand
+- Shoe type
+- Item condition
+- Listing title
+- Item description
+- Premium keyword indicators
+- Title length
+- Description length
+
+Listing titles and descriptions are converted into numerical features using both word-level and character-level TF-IDF. Character-level features help the model recognize model numbers, abbreviations, misspellings, and variations such as `Air Max`, `AirMax`, and `air-max`.
+
+Because listing prices are strongly right-skewed, the model predicts `log(price + 1)` and converts predictions back into dollar values.
+
+### Models Tested
+
+The following models were evaluated:
+
+- Median-price baseline
+- Linear Regression
+- Ridge Regression
+- Weighted Ridge Regression
+- XGBoost Regression
+
+The median baseline predicted the same median price for every listing. The trained models were compared using Mean Absolute Error, Root Mean Squared Error, and R².
+
+### Model Performance
+
+| Model | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Median Baseline | $21.75 | $41.95 | -0.073 |
+| Linear Regression | $14.83 | $30.03 | 0.450 |
+| Ridge Regression | $14.85 | $30.25 | 0.442 |
+| Title-Enhanced Ridge | $12.65 | $26.53 | 0.571 |
+| Description-Enhanced Ridge | $12.38 | $25.73 | 0.596 |
+| Tuned Ridge | $12.22 | $25.69 | 0.597 |
+| Premium-Feature Ridge | $12.16 | $25.46 | 0.604 |
+| Balanced Weighted Ridge | $12.19 | $24.59 | 0.631 |
+| XGBoost | $13.07 | $27.24 | 0.547 |
+| Character-Enhanced Weighted Ridge | **$12.15** | **$24.28** | **0.640** |
+
+The current best-performing model is the **Character-Enhanced Balanced Weighted Ridge Regression model**.
+
+### Current Best Model
+
+The final model combines:
+
+- One-hot encoded brand and shoe type
+- Item condition
+- Word-level TF-IDF features from listing titles
+- Character-level TF-IDF features from listing titles
+- TF-IDF features from item descriptions
+- Premium keyword indicators
+- Title and description length
+- Balanced sample weighting for higher-priced listings
+- Ridge Regression with `alpha = 2.0`
+
+The model achieved:
+
+- **Mean Absolute Error:** $12.15
+- **Root Mean Squared Error:** $24.28
+- **R²:** 0.640
+
+This means the model explains approximately 64% of the variation in listing prices and misses the actual listing price by about $12.15 on average.
+
+### Performance by Price Range
+
+| Actual Listing Price | Number of Test Listings | MAE |
+|---|---:|---:|
+| $0–$25 | 4,341 | $6.80 |
+| $25–$50 | 3,833 | $9.03 |
+| $50–$100 | 1,880 | $17.26 |
+| $100+ | 582 | $56.06 |
+
+The estimator performs best for typical Mercari listings under $50. Rare and expensive listings remain more difficult because they appear less frequently and often depend on details not fully captured in the dataset, such as exact model rarity, authenticity, release year, or original retail price.
+
 ## Limitations
 
-- Mercari prices are listing prices, not confirmed sale prices
-- Original retail prices are unavailable
-- Different models and styles may be grouped under one brand
-- Product age is unavailable
-- Authenticity cannot be verified
-- Condition is seller-reported and subjective
-- Shipping and listing strategy may influence prices
-- Price retention is descriptive, not literal depreciation
+- The Mercari dataset contains listing prices rather than confirmed sale prices.
+- Expensive and rare shoes are much harder to predict than typical listings.
+- The dataset does not include original retail price, release year, authenticity verification, exact shoe model, size, or seller reputation.
+- Item condition is reported by the seller and may be inconsistent.
+- The model should be interpreted as a pricing estimate rather than a guaranteed resale value.
+
+## Next Steps
+
+- Improve detection of premium and rare listings
+- Create adaptive prediction ranges based on model uncertainty
+- Retrain the final model on the full cleaned dataset
+- Save the trained preprocessing and prediction pipeline
+- Build a Streamlit website where users can enter shoe information and receive an estimated listing price
+- Add confidence or reliability warnings for high-priced and low-data listings
 
 ## Tools Used
 
