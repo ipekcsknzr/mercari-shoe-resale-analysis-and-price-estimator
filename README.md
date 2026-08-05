@@ -116,12 +116,6 @@ Two charts are created for every shoe category:
 2. **Condition 3 Price Retention**  
    A horizontal bar chart showing Condition 3 median price as a percentage of the brand’s own Condition 1 median price.
 
-Charts are saved in:
-
-```text
-outputs/charts/
-```
-
 ## Project Structure
 
 ```text
@@ -291,6 +285,8 @@ The Streamlit application does not display one exact price as a guaranteed value
 ```text
 Lower bound = Predicted price × 0.85
 Upper bound = Predicted price × 1.15
+
+```
 
 ### Performance by Price Range
 
