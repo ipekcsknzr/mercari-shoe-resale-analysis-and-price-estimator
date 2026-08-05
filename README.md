@@ -152,6 +152,7 @@ mercari-shoe-resale-analysis/
 ├── README.md
 └── requirements.txt
 
+```
 ## Notebook Workflow
 
 ### `01_data_exploration.ipynb`
