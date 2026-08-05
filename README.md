@@ -2,31 +2,31 @@
 
 ## Project Overview
 
-This project analyzes women’s shoe listings from the Mercari Price Suggestion Challenge dataset to understand how listing prices change across brands, shoe types, and item conditions.
+This project uses women’s shoe listings from the Mercari Price Suggestion Challenge dataset to study resale-price patterns and build a deployable machine-learning pricing tool.
 
-The project has two main parts:
+The project has two main components:
 
 1. **Condition-retention analysis**  
-   Measures how each brand’s own median listing price changes as shoe condition worsens within the same shoe type.
+   Measures how each brand’s median listing price changes as item condition worsens within the same shoe type.
 
-2. **Machine-learning price estimator**  
-   Predicts an expected Mercari listing price using brand, shoe type, item condition, listing title, item description, and engineered text features.
+2. **Machine-learning price-range estimator**  
+   Uses brand, shoe type, condition, listing text, and engineered features to generate a suggested Mercari listing-price range.
 
-The analysis focuses on seven women’s shoe categories and uses more than 53,000 cleaned listings.
+The analysis covers seven women’s shoe categories and uses **53,176 cleaned listings**.
 
-The current best prediction model is a character-enhanced, balanced weighted Ridge Regression model with:
+The selected deployment model is a **Premium-Feature Ridge Regression model**. It was chosen because it offered a strong balance between simplicity, interpretability, proportional accuracy, and dollar accuracy.
 
-- **Mean Absolute Error:** $12.15
-- **Root Mean Squared Error:** $24.28
-- **R²:** 0.640
+Final test-set performance:
 
-The estimator performs best for typical listings under $50, while rare and premium listings remain more difficult to predict.
+- **Mean Absolute Log Error (MALE):** 0.304
+- **Median Absolute Percentage Error (MdAPE):** 23.7%
+- **Mean Absolute Error (MAE):** $12.16
+- **Root Mean Squared Error (RMSE):** $25.46
+- **R²:** 0.604
 
-The long-term goal is to build a Kelley Blue Book–style website where users can enter shoe details and receive:
+A Streamlit application loads the trained model and returns a practical suggested listing range of **±15% around the model prediction**.
 
-- An estimated Mercari listing price
-- An adaptive price range
-- A confidence or reliability indicator
+The displayed range is intended as pricing guidance. It is not a formal confidence interval, guaranteed sale price, or prediction of a completed transaction.
 
 ## Dataset
 
@@ -126,26 +126,31 @@ outputs/charts/
 
 ```text
 mercari-shoe-resale-analysis/
+├── app.py
 ├── data/
 │   ├── raw/
 │   │   └── train.tsv
 │   └── processed/
 │       ├── clean_womens_shoes.parquet
-│       └── brand_shoe_condition_retention.parquet
+│       ├── brand_shoe_condition_retention.parquet
+│       └── brand_shoe_bootstrap_intervals.parquet
+├── models/
+│   └── mercari_shoe_price_estimator.joblib
 ├── notebooks/
 │   ├── 01_data_exploration.ipynb
 │   ├── 02_shoe_data_cleaning.ipynb
 │   ├── 03_exploratory_brand_tiers.ipynb
 │   ├── 04_condition_retention_analysis.ipynb
-│   └── 05_condition_visualizations.ipynb
+│   ├── 05_visualizations.ipynb
+│   ├── 06_bootstrap_confidence_intervals.ipynb
+│   └── 07_shoe_price_estimator.ipynb
 ├── outputs/
 │   ├── charts/
 │   └── tables/
 │       └── brand_shoe_condition_retention.csv
 ├── .gitignore
-├── requirements.txt
-└── README.md
-```
+├── README.md
+└── requirements.txt
 
 ## Notebook Workflow
 
@@ -185,9 +190,9 @@ These results should be interpreted cautiously because the dataset does not iden
 
 ## Price Estimation Model
 
-In addition to the condition-retention analysis, this project now includes a machine-learning model that estimates the expected Mercari listing price of a women’s shoe.
+The project includes a machine-learning model that estimates the expected listing price of a women’s shoe on Mercari.
 
-The estimator uses the following inputs:
+The model uses:
 
 - Brand
 - Shoe type
@@ -198,21 +203,40 @@ The estimator uses the following inputs:
 - Title length
 - Description length
 
-Listing titles and descriptions are converted into numerical features using both word-level and character-level TF-IDF. Character-level features help the model recognize model numbers, abbreviations, misspellings, and variations such as `Air Max`, `AirMax`, and `air-max`.
+The Streamlit application makes the listing title optional. When no title is entered, the app uses the selected brand and shoe type as fallback text.
 
-Because listing prices are strongly right-skewed, the model predicts `log(price + 1)` and converts predictions back into dollar values.
+Categorical features are transformed using one-hot encoding. Listing titles and descriptions are converted into numerical features using word-level TF-IDF.
+
+Additional indicators identify terms such as:
+
+- `limited`
+- `rare`
+- `vintage`
+- `authentic`
+- `designer`
+- `luxury`
+- `leather`
+- `suede`
+- `new`
+- `nwt`
+- `nwot`
+
+Because listing prices are strongly right-skewed, the model predicts `log(price + 1)` and converts predictions back into dollars.
 
 ### Models Tested
 
-The following models were evaluated:
+The following approaches were evaluated:
 
 - Median-price baseline
 - Linear Regression
 - Ridge Regression
+- Tuned Ridge Regression
+- Title-Enhanced Ridge Regression
+- Description-Enhanced Ridge Regression
+- Premium-Feature Ridge Regression
 - Weighted Ridge Regression
+- Character-Enhanced Weighted Ridge Regression
 - XGBoost Regression
-
-The median baseline predicted the same median price for every listing. The trained models were compared using Mean Absolute Error, Root Mean Squared Error, and R².
 
 ### Model Performance
 
@@ -224,34 +248,48 @@ The median baseline predicted the same median price for every listing. The train
 | Title-Enhanced Ridge | $12.65 | $26.53 | 0.571 |
 | Description-Enhanced Ridge | $12.38 | $25.73 | 0.596 |
 | Tuned Ridge | $12.22 | $25.69 | 0.597 |
-| Premium-Feature Ridge | $12.16 | $25.46 | 0.604 |
+| **Premium-Feature Ridge** | **$12.16** | **$25.46** | **0.604** |
 | Balanced Weighted Ridge | $12.19 | $24.59 | 0.631 |
 | XGBoost | $13.07 | $27.24 | 0.547 |
-| Character-Enhanced Weighted Ridge | **$12.15** | **$24.28** | **0.640** |
+| Character-Enhanced Weighted Ridge | $12.15 | $24.28 | 0.640 |
 
-The current best-performing model is the **Character-Enhanced Balanced Weighted Ridge Regression model**.
+The Character-Enhanced Weighted Ridge model achieved the strongest raw RMSE and R² results. However, the **Premium-Feature Ridge model** was selected for deployment because it remained nearly tied in dollar MAE while requiring less preprocessing and no special sample weighting.
 
-### Current Best Model
+### Selected Deployment Model
 
-The final model combines:
+The deployed model combines:
 
 - One-hot encoded brand and shoe type
 - Item condition
 - Word-level TF-IDF features from listing titles
-- Character-level TF-IDF features from listing titles
-- TF-IDF features from item descriptions
+- Word-level TF-IDF features from item descriptions
 - Premium keyword indicators
 - Title and description length
-- Balanced sample weighting for higher-priced listings
 - Ridge Regression with `alpha = 2.0`
 
-The model achieved:
+Final selected-model performance:
 
-- **Mean Absolute Error:** $12.15
-- **Root Mean Squared Error:** $24.28
-- **R²:** 0.640
+| Metric | Result |
+|---|---:|
+| Mean Absolute Log Error | 0.304 |
+| Median Absolute Percentage Error | 23.7% |
+| Mean Absolute Error | $12.16 |
+| Root Mean Squared Error | $25.46 |
+| R² | 0.604 |
 
-This means the model explains approximately 64% of the variation in listing prices and misses the actual listing price by about $12.15 on average.
+MALE is used as the primary proportional-error metric because a fixed dollar error has a different practical meaning for inexpensive and expensive shoes.
+
+MdAPE shows that half of the model’s predictions had an absolute percentage error of approximately **23.7% or less**.
+
+MAE is retained because it gives an intuitive dollar-based interpretation of model error.
+
+### Suggested Listing Range
+
+The Streamlit application does not display one exact price as a guaranteed value. Instead, it shows a suggested listing range calculated as:
+
+```text
+Lower bound = Predicted price × 0.85
+Upper bound = Predicted price × 1.15
 
 ### Performance by Price Range
 
@@ -266,21 +304,40 @@ The estimator performs best for typical Mercari listings under $50. Rare and exp
 
 ## Limitations
 
-- The Mercari dataset contains listing prices rather than confirmed sale prices.
-- Expensive and rare shoes are much harder to predict than typical listings.
-- The dataset does not include original retail price, release year, authenticity verification, exact shoe model, size, or seller reputation.
-- Item condition is reported by the seller and may be inconsistent.
-- The model should be interpreted as a pricing estimate rather than a guaranteed resale value.
+- The dataset contains listing prices rather than confirmed transaction prices.
+- The model estimates an appropriate listing range, not a guaranteed resale value.
+- The ±15% displayed range is a practical recommendation and not a formal confidence interval.
+- Testing showed that a ±15% interval contained approximately 33.2% of test-set actual prices.
+- Rare and expensive listings remain more difficult to predict.
+- The dataset does not include original retail price, release year, authenticity verification, exact shoe model, shoe size, seller reputation, or completed-sale status.
+- Item condition is self-reported by sellers and may be inconsistent.
+- Condition 5 contains relatively few listings, so predictions for that condition may be less reliable.
+- The model was trained on historical Mercari data and may not capture current marketplace trends.
 
 ## Next Steps
 
-- Improve detection of premium and rare listings
-- Create adaptive prediction ranges based on model uncertainty
-- Retrain the final model on the full cleaned dataset
-- Save the trained preprocessing and prediction pipeline
-- Build a Streamlit website where users can enter shoe information and receive an estimated listing price
-- Add confidence or reliability warnings for high-priced and low-data listings
+- Deploy the Streamlit application publicly
+- Add a screenshot or demonstration GIF to the README
+- Evaluate the model on newer or external resale-market data
+- Improve prediction quality for rare and premium listings
+- Add reliability warnings based on brand and shoe-type sample size
+- Explore more formal prediction-interval methods separately from the practical ±15% listing range
+- Improve the interface for unknown or manually entered brands
+- Add automated testing for feature engineering and model inference
 
 ## Tools Used
 
-Python, pandas, matplotlib, Jupyter Notebook, VS Code, Git, GitHub, and Parquet.
+- Python
+- pandas
+- NumPy
+- scikit-learn
+- XGBoost
+- Matplotlib
+- Jupyter Notebook
+- Streamlit
+- joblib
+- Parquet
+- VS Code
+- Git
+- GitHub
+
